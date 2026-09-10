@@ -52,11 +52,12 @@ async function smoothScrollToBottom(page, durationMs) {
 
     await smoothScrollToBottom(page, SCROLL_HOME_MS);
 
-    // Prefer the footer's exact Gather link; fall back to the last matching
-    // link anywhere on the page if the footer selector doesn't match.
-    let gatherLink = page.locator('footer a[href="https://kairosministries.net/gather"]');
+    // Prefer the footer's exact Gather link; fall back to any visible link
+    // pointing at /gather. ":visible" avoids hidden duplicate nav markup
+    // some site builders leave in the DOM for mobile/desktop breakpoints.
+    let gatherLink = page.locator('footer a[href="https://kairosministries.net/gather"]:visible');
     if ((await gatherLink.count()) === 0) {
-      gatherLink = page.locator('a[href="https://kairosministries.net/gather"]').last();
+      gatherLink = page.locator('a[href="https://kairosministries.net/gather"]:visible').last();
     }
     await gatherLink.first().click();
     await page.waitForLoadState('load');
