@@ -3,6 +3,9 @@ name: Record site walkthrough
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   record:
     runs-on: ubuntu-latest
@@ -17,7 +20,23 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      - run: node record.js
+      - name: Run recorder
+        run: node record.js
+        continue-on-error: true
+        id: recorder
+
+      - name: Commit diagnostic log
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f run-status.txt
+          git diff --cached --quiet || git commit -m "Record run status [skip ci]"
+          git push
+
+      - name: Fail job if recorder failed
+        if: steps.recorder.outcome == 'failure'
+        run: exit 1
 
       - name: Convert to mp4
         run: |
@@ -31,3 +50,4 @@ jobs:
         with:
           name: site-walkthrough-video
           path: videos/*.mp4
+
