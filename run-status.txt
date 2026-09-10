@@ -1,0 +1,8 @@
+FAILURE
+2026-09-10T18:25:57.245Z
+
+locator.click: Timeout 45000ms exceeded.
+Call log:
+  - waiting for locator('a[href="https://kairosministries.net/gather"]:visible').last().first()
+
+    at /home/runner/work/website.preview/website.preview/record.js:62:30
