@@ -1,0 +1,33 @@
+name: Record site walkthrough
+
+on:
+  workflow_dispatch:
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: node record.js
+
+      - name: Convert to mp4
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          cd videos
+          for f in *.webm; do
+            ffmpeg -i "$f" -c:v libx264 -pix_fmt yuv420p -movflags +faststart "${f%.webm}.mp4"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-walkthrough-video
+          path: videos/*.mp4
