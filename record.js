@@ -1,6 +1,45 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 
+(async () => {
+  let browser;
+  try {
+    browser = await chromium.launch();
+    const context = await browser.newContext({ viewport: { width: 1080, height: 1920 } });
+    const page = await context.newPage();
+    page.setDefaultTimeout(45000);
+    page.setDefaultNavigationTimeout(45000);
+
+    await page.goto('https://kairosministries.net/', { waitUntil: 'load' });
+
+    // Dump every link on the page: exact href attribute, visible text,
+    // and whether Playwright considers it visible. This is ground truth
+    // from the real DOM, not a scraped/converted copy.
+    const links = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll('a')).map((a) => ({
+        href: a.getAttribute('href'),
+        text: (a.textContent || '').trim(),
+        visible: !!(a.offsetWidth || a.offsetHeight || a.getClientRects().length),
+      }));
+    });
+
+    const report = links
+      .map((l, i) => `${i}: text="${l.text}" href="${l.href}" visible=${l.visible}`)
+      .join('\n');
+
+    fs.writeFileSync('run-status.txt', 'DIAGNOSTIC\n' + new Date().toISOString() + '\n\n' + report + '\n');
+    await browser.close();
+  } catch (err) {
+    const detail = 'DIAGNOSTIC-FAILURE\n' + new Date().toISOString() + '\n\n' +
+      (err && err.stack ? err.stack : String(err)) + '\n';
+    fs.writeFileSync('run-status.txt', detail);
+    if (browser) await browser.close().catch(() => {});
+    process.exitCode = 1;
+  }
+})();
+const { chromium } = require('playwright');
+const fs = require('fs');
+
 // ---- Tunable timing (ms) ----
 const HOLD_HERO_MS = 600;
 const SCROLL_HOME_MS = 3400;
